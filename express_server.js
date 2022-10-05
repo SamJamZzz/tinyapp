@@ -27,6 +27,15 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
 
+const searchForURLId = (id) => {
+  for (i in urlDatabase) {
+    if (i === id) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const searchUserByEmail = (email) => {
   for (let user in users) {
     if (users[user].email === email) {
@@ -57,8 +66,11 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("login", templateVars);
+  if (!req.cookies['user_id']) {
+    const templateVars = { user: users[req.cookies["user_id"]] };
+    return res.render("login", templateVars);
+  }
+  res.redirect('/urls');
 });
 
 app.post("/login", (req, res) => {
@@ -86,21 +98,30 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
-  res.redirect(`/urls/:${id}`);
+  if (req.cookies['user_id']) {
+    let id = generateRandomString();
+    urlDatabase[id] = req.body.longURL;
+    return res.redirect(`/urls/${id}`);
+  }
+  res.send("<html><body>You cannot shorten URLs without being signed in.</body></html>\n");
 });
 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
+  if (searchForURLId(req.params.id)) {
+    const longURL = urlDatabase[req.params.id];
+    return res.redirect(longURL);
+  }
+  res.send("<html><body>Invalid short URL</body></html>\n");
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]]
-  };
-  res.render("urls_new", templateVars);
+  if (req.cookies['user_id']) {
+    const templateVars = {
+      user: users[req.cookies["user_id"]]
+    };
+    return res.render("urls_new", templateVars);
+  }
+  res.redirect('/login');
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -109,8 +130,11 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
-  res.render("register", templateVars);
+  if (!req.cookies['user_id']) {
+    const templateVars = { user: users[req.cookies["user_id"]] };
+    res.render("register", templateVars);
+  }
+  res.redirect('/urls');
 });
 
 app.post("/register", (req, res) => {
