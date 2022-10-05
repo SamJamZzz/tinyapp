@@ -27,6 +27,15 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
 
+const searchUserByEmail = (email) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return user;
+    }
+  }
+  return null;
+};
+
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -90,6 +99,14 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send('You must enter an email and password');
+  }
+
+  if (searchUserByEmail(req.body.email)) {
+    return res.status(400).send('Email already in use');
+  }
+
   let userObj = {};
   let userID = generateRandomString();
   res.cookie("user_id", userID);
