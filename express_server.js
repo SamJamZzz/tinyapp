@@ -30,7 +30,7 @@ const generateRandomString = () => {
 const searchUserByEmail = (email) => {
   for (let user in users) {
     if (users[user].email === email) {
-      return user;
+      return users[user];
     }
   }
   return null;
@@ -56,13 +56,27 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect('/urls');
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("login", templateVars);
+});
+
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
+  let user = searchUserByEmail(req.body.email);
+  if (!user) {
+    return res.status(403).send('Incorrect email');
+  }
+
+  if (user.password !== req.body.password) {
+    return res.status(403).send('Incorrect password');
+  }
+
+  res.cookie('user_id', user.id);
   res.redirect('/urls');
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 
@@ -95,7 +109,8 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  res.render("register");
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("register", templateVars);
 });
 
 app.post("/register", (req, res) => {
