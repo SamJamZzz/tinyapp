@@ -1,3 +1,4 @@
+const { generateRandomString, searchForURLId, searchUserByEmail, urlsForUser } = require('./helpers')
 const express = require("express");
 const cookieSession = require('cookie-session')
 const bcrypt = require("bcryptjs");
@@ -7,9 +8,7 @@ app.set("view engine", "ejs");
 app.use(cookieSession({
   name: 'session',
   keys: ['tiny'],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  maxAge: 24 * 60 * 60 * 1000
 }));
 
 const urlDatabase = {
@@ -25,38 +24,6 @@ const urlDatabase = {
 
 const users = {};
 
-const generateRandomString = () => {
-  return Math.random().toString(36).substring(2, 8);
-};
-
-const searchForURLId = (id) => {
-  for (i in urlDatabase) {
-    if (i === id) {
-      return true;
-    }
-  }
-  return false;
-};
-
-const searchUserByEmail = (email) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return users[user];
-    }
-  }
-  return null;
-};
-
-const urlsForUser = (id) => {
-  let validURLs = {};
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      validURLs[url] = urlDatabase[url];
-    }
-  }
-  return validURLs;
-};
-
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -71,7 +38,7 @@ app.post("/urls/:id/update", (req, res) => {
   if (!req.session.user_id) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
-  if (!searchForURLId(req.params.id)) {
+  if (!searchForURLId(req.params.id, urlDatabase)) {
     return res.send("<html><body>Short URL does not exist</body></html>\n");
   }
 
@@ -83,7 +50,7 @@ app.get("/urls/:id/delete", (req, res) => {
   if (!req.session.user_id) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
-  if (!searchForURLId(req.params.id)) {
+  if (!searchForURLId(req.params.id, urlDatabase)) {
     return res.send("<html><body>Short URL does not exist</body></html>\n");
   }
   if (req.session.user_id !== urlDatabase[req.params.id].userID) {
@@ -98,7 +65,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!req.session.user_id) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
-  if (!searchForURLId(req.params.id)) {
+  if (!searchForURLId(req.params.id, urlDatabase)) {
     return res.send("<html><body>Short URL does not exist</body></html>\n");
   }
   if (req.session.user_id !== urlDatabase[req.params.id].userID) {
@@ -118,7 +85,7 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  let user = searchUserByEmail(req.body.email);
+  let user = searchUserByEmail(req.body.email, users);
   if (!user) {
     return res.status(403).send('Incorrect email');
   }
@@ -136,7 +103,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let validURLs = urlsForUser(req.session.user_id);
+  let validURLs = urlsForUser(req.session.user_id, urlDatabase);
   if (req.session.user_id) {
     const templateVars = { urls: validURLs, user: users[req.session.user_id] };
     return res.render("urls_index", templateVars);
@@ -158,11 +125,16 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  if (searchForURLId(req.params.id)) {
-    const longURL = urlDatabase[req.params.id].longURL;
-    return res.redirect(longURL);
+  if (!searchForURLId(req.params.id, urlDatabase)) {
+    return res.send("<html><body>Invalid short URL</body></html>\n");
   }
-  res.send("<html><body>Invalid short URL</body></html>\n");
+
+  if (req.session.user_id !== urlDatabase[req.params.id].userID) {
+    return res.send("<html><body>You do not have access to this short URL</body></html>\n");
+  }
+
+  const longURL = urlDatabase[req.params.id].longURL;
+  res.redirect(longURL);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -179,7 +151,7 @@ app.get("/urls/:id", (req, res) => {
   if (!req.session.user_id) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
-  if (!searchForURLId(req.params.id)) {
+  if (!searchForURLId(req.params.id, urlDatabase)) {
     return res.send("<html><body>Short URL does not exist</body></html>\n");
   }
   if (req.session.user_id !== urlDatabase[req.params.id].userID) {
@@ -203,7 +175,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send('You must enter an email and password');
   }
 
-  if (searchUserByEmail(req.body.email)) {
+  if (searchUserByEmail(req.body.email, users)) {
     return res.status(400).send('Email already in use');
   }
 
