@@ -27,7 +27,10 @@ const users = {};
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (!req.session.user_id) {
+    return res.redirect('/login');
+  }
+  res.redirect('/urls');
 });
 
 app.get("/urls.json", (req, res) => {
