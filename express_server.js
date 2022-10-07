@@ -87,11 +87,11 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   let user = searchUserByEmail(req.body.email, users);
   if (!user) {
-    return res.status(403).send('Incorrect email');
+    return res.status(403).send('Invalid credentials');
   }
 
   if (!bcrypt.compareSync(req.body.password, user.password)) {
-    return res.status(403).send('Incorrect password');
+    return res.status(403).send('Invalid credentials');
   }
   req.session.user_id = user.id;
   res.redirect('/urls');
