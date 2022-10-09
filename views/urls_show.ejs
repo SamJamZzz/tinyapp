@@ -24,12 +24,13 @@
       <div>
         <h5>Edit</h5>
         <p>New URL:</p>
-        <form method="POST" action="/urls/<%= id %>/update" class="d-flex">
+        <form method="POST" action="/urls/<%= id %>" class="d-flex">
           <input
             class="form-control"
             type="text"
             name="updatedLongURL"
             placeholder="http://"
+            value="<%= longURL %>"
           />
           <button type="submit">Submit</button>
         </form>

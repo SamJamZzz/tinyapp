@@ -37,18 +37,6 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.post("/urls/:id/update", (req, res) => {
-  if (!req.session.user_id) {
-    return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
-  }
-  if (!searchForURLId(req.params.id, urlDatabase)) {
-    return res.send("<html><body>Short URL does not exist</body></html>\n");
-  }
-
-  urlDatabase[req.params.id].longURL = req.body.updatedLongURL;
-  res.redirect('/urls');
-});
-
 app.get("/urls/:id/delete", (req, res) => {
   if (!req.session.user_id) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
@@ -160,6 +148,18 @@ app.get("/urls/:id", (req, res) => {
   if (req.session.user_id !== urlDatabase[req.params.id].userID) {
     return res.send("<html><body>You do not have access to this short URL</body></html>\n");
   }
+
+  app.post("/urls/:id", (req, res) => {
+    if (!req.session.user_id) {
+      return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
+    }
+    if (!searchForURLId(req.params.id, urlDatabase)) {
+      return res.send("<html><body>Short URL does not exist</body></html>\n");
+    }
+  
+    urlDatabase[req.params.id].longURL = req.body.updatedLongURL;
+    res.redirect('/urls');
+  });
 
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars);
