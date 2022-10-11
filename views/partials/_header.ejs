@@ -20,9 +20,6 @@
     </div>
       <% if (user) { %>
       <h5>Logged in as: <%= user.email %></h5>
-      <form method="GET" action="/register" class="d-flex">
-        <button type="submit">Register</button>
-      </form>
       <form method="POST" action="/logout" class="d-flex">
         <button type="submit">Logout</button>
       </form>
