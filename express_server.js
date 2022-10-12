@@ -11,6 +11,8 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000
 }));
 
+// Database
+// URL database
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -22,6 +24,7 @@ const urlDatabase = {
   },
 };
 
+// User database
 const users = {};
 
 app.use(express.urlencoded({ extended: true }));
@@ -106,11 +109,7 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   if (req.session.user_id) {
     let id = generateRandomString();
-    if (!urlDatabase[id]) {
-      urlDatabase[id] = {};
-    }
-    urlDatabase[id].longURL = req.body.longURL;
-    urlDatabase[id].userID = req.session.user_id;
+    urlDatabase[id] = {longURL: req.body.longURL, userID: req.session.user_id};
     return res.redirect(`/urls/${id}`);
   }
   res.send("<html><body>You cannot shorten URLs without being signed in.</body></html>\n");
