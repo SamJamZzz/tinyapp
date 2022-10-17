@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Homepage route
 app.get("/", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     return res.redirect('/login');
   }
   res.redirect('/urls');
@@ -47,7 +47,7 @@ app.get("/hello", (req, res) => {
 // Shows list of URLs
 app.get("/urls", (req, res) => {
   let validURLs = urlsForUser(req.session.user_id, urlDatabase);
-  if (req.session.user_id) {
+  if (req.session.user_id && users[req.session.user_id]) {
     const templateVars = { urls: validURLs, user: users[req.session.user_id] };
     return res.render("urls_index", templateVars);
   }
@@ -56,7 +56,7 @@ app.get("/urls", (req, res) => {
 
 // Shows page for creation of new short URL
 app.get("/urls/new", (req, res) => {
-  if (req.session.user_id) {
+  if (req.session.user_id && users[req.session.user_id]) {
     const templateVars = {
       user: users[req.session.user_id]
     };
@@ -67,7 +67,7 @@ app.get("/urls/new", (req, res) => {
 
 // Shows page for given short URL
 app.get("/urls/:id", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
   if (!searchForURLId(req.params.id, urlDatabase)) {
@@ -86,7 +86,7 @@ app.get("/urls/:id", (req, res) => {
 // Rendering auth routes
 // Shows page for registering new user
 app.get("/register", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     const templateVars = { user: users[req.session.user_id] };
     return res.render("register", templateVars);
   }
@@ -95,7 +95,7 @@ app.get("/register", (req, res) => {
 
 // Shows page for an existing user to login
 app.get("/login", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     const templateVars = { user: users[req.session.user_id] };
     return res.render("login", templateVars);
   }
@@ -107,7 +107,7 @@ app.get("/login", (req, res) => {
 // urls CRUD REST API
 // Creates new short URL
 app.post("/urls", (req, res) => {
-  if (req.session.user_id) {
+  if (req.session.user_id && users[req.session.user_id]) {
     let id = generateRandomString();
     urlDatabase[id] = {longURL: req.body.longURL, userID: req.session.user_id};
     return res.redirect(`/urls/${id}`);
@@ -135,7 +135,7 @@ app.get("/u/:id", (req, res) => {
 
 // Updates the long URL for a given short URL
 app.post("/urls/:id", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
   if (!searchForURLId(req.params.id, urlDatabase)) {
@@ -148,7 +148,7 @@ app.post("/urls/:id", (req, res) => {
 
 // Deletes the long and short URLs for the user they are associated with
 app.post("/urls/:id/delete", (req, res) => {
-  if (!req.session.user_id) {
+  if (!req.session.user_id || !users[req.session.user_id]) {
     return res.send("<html><body>You must be logged in to access short URLs</body></html>\n");
   }
   if (!searchForURLId(req.params.id, urlDatabase)) {
